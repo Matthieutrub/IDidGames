@@ -2,16 +2,16 @@ package com.matthieutrublin.ididgames;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     EditText editTextTableWidth = null;
@@ -21,46 +21,111 @@ public class MainActivity extends AppCompatActivity {
     TableLayout matrice =null;
     Context contextThis = null;
     View layoutTable =null;
+    Boolean matriceBool[][]=new Boolean[25][25];
+    //Integer matriceForm[][]=new Integer[25][25];
+    TextView pixel[][]=new TextView[25][25];
+    Integer colorPlain = Color.argb(255, 0, 175, 0);
+    Integer colorEmpty = Color.argb(255, 175, 64, 64);
+    TextView nbForm;
+    TextView textViewPerimeter;
+
+    //List<Integer> form = new ArrayList<Integer>();
+
+
+    Integer perimeter=0;
 
     private void initTable() {
-        int layoutWidth = layoutTable.getWidth();
-        int layoutHeight = layoutTable.getHeight();
 
         tableWidth=Integer.parseInt(editTextTableWidth.getText().toString());
         tableHeight=Integer.parseInt(editTextTableHeight.getText().toString());
-
-        int maxPixelWidth = layoutWidth / tableWidth;
-        int maxPixelHeight = layoutHeight / tableHeight;
-        Log.d("Min", "Find the min between "+ maxPixelHeight +" and "+ maxPixelWidth);
-        int pixelSize;
-        if(maxPixelWidth>maxPixelHeight){
-            pixelSize = maxPixelHeight;
-        }
-        else {
-            pixelSize = maxPixelWidth;
-        }
-
-
-        ViewGroup.LayoutParams params=matrice.getLayoutParams();
-        params.width=pixelSize * tableWidth;
-        params.height=pixelSize * tableHeight;
-        matrice.setLayoutParams(params);
+        textViewPerimeter.setText("0");
         matrice.removeAllViews();
         for(int i = 0; i < tableHeight; i++){
-            TableRow row=new TableRow(this);
+            TableRow row=new TableRow(contextThis);
             for(int j = 0; j < tableWidth; j++)
             {
-                boolean plain=false;
-                View pixel = new Pixel(this,pixelSize,false);
-                int color = Color.argb(255, 0, 175, 64);
-                pixel.setBackgroundColor(color);
-                row.addView(new Pixel(this,pixelSize,false));
+                matriceBool[i][j]=false;
+                //matriceForm[i][j]=0;
+                pixel[i][j] =new TextView(contextThis);
+                pixel[i][j].setText("    ");
+                pixel[i][j].setClickable(true);
+                pixel[i][j].setBackgroundColor(colorEmpty);
+                pixel[i][j].setOnClickListener(clickListenerPixel);
+                row.addView(pixel[i][j]);
             }
             matrice.addView(row,i);
         }
 
     }
 
+
+    private View.OnClickListener clickListenerPixel = new View.OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+            ColorDrawable pixelColor = (ColorDrawable) v.getBackground();
+            if(pixelColor.getColor()==colorPlain){
+                v.setBackgroundColor(colorEmpty);
+            } else {
+                v.setBackgroundColor(colorPlain);
+            }
+            updateMatrice();
+            updateData();
+        }
+    };
+
+    private void updateMatrice() {
+        for(int i = 0; i < tableHeight; i++){
+            for(int j = 0; j < tableWidth; j++)
+            {
+                ColorDrawable pixelColor = (ColorDrawable) pixel[i][j].getBackground();
+                if(pixelColor.getColor()==colorPlain){
+                    matriceBool[i][j]=true;
+                } else {
+                    matriceBool[i][j]=false;
+                }
+            }
+        }
+    }
+
+    private void updateData() {
+        perimeter=0;
+        for(int i = 0; i < tableHeight; i++){
+            for(int j = 0; j < tableWidth; j++)
+            {
+                if(matriceBool[i][j]){
+
+                    //Up
+                    if(i==0){
+                        perimeter++;
+                    } else if (!matriceBool[i-1][j]){
+                        perimeter++;
+                    }
+
+                    //Down
+                    if(i+1==tableHeight){
+                        perimeter++;
+                    } else if (!matriceBool[i+1][j]){
+                        perimeter++;
+                    }
+                    //Left
+                    if(i==0){
+                        perimeter++;
+                    } else if (!matriceBool[i][j-1]){
+                        perimeter++;
+                    }
+
+                    //Right
+                    if(j+1==tableWidth){
+                        perimeter++;
+                    } else if (!matriceBool[i][j-1]){
+                        perimeter++;
+                    }
+                }
+            }
+        }
+        textViewPerimeter.setText(perimeter+" ");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,21 +136,24 @@ public class MainActivity extends AppCompatActivity {
         editTextTableWidth = findViewById(R.id.editTextTableWidth);
         editTextTableHeight = findViewById(R.id.editTextTableHeight);
         matrice = findViewById(R.id.matrice);
-
-        int color = Color.argb(255, 255, 175, 64);
-        matrice.setBackgroundColor(color);
         layoutTable = findViewById(R.id.layoutTable);
+        nbForm = findViewById(R.id.textViewNbForm);
+        textViewPerimeter = findViewById(R.id.textViewPerimeter);
 
         editTextTableWidth.setText("10");
         editTextTableHeight.setText("10");
         tableWidth=Integer.parseInt(editTextTableWidth.getText().toString());
         tableHeight=Integer.parseInt(editTextTableHeight.getText().toString());
 
-
+        initTable();
 
         editTextTableWidth.addTextChangedListener(new TextWatcher() {
             public void afterTextChanged(Editable s) {
-                if(!(editTextTableHeight.getText().toString()=="")){
+                if(editTextTableWidth.getText().toString().isEmpty()){
+                } else if(Integer.parseInt(editTextTableWidth.getText().toString())>25){
+                    editTextTableWidth.setText("25");
+                    initTable();
+                } else {
                     initTable();
                 }
             }
@@ -94,7 +162,11 @@ public class MainActivity extends AppCompatActivity {
         });
         editTextTableHeight.addTextChangedListener(new TextWatcher() {
             public void afterTextChanged(Editable s) {
-                if(!(editTextTableHeight.getText().toString()=="")){
+                if(editTextTableHeight.getText().toString().isEmpty()){
+                } else if(Integer.parseInt(editTextTableHeight.getText().toString())>25){
+                    editTextTableHeight.setText("25");
+                    initTable();
+                } else {
                     initTable();
                 }
             }
@@ -105,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        initTable();
+
 
     }
 }
