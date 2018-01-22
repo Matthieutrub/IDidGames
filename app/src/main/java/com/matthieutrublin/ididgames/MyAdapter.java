@@ -1,5 +1,6 @@
 package com.matthieutrublin.ididgames;
 
+import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -36,6 +37,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     @Override
     public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
                                                    int viewType) {
+
         // create a new view
         ImageView blockImage = new ImageView(MainActivity.context);
         blockImage.setLayoutParams(new ViewGroup.LayoutParams(MainActivity.width/3,
@@ -50,8 +52,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     public void onBindViewHolder(ViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        new DownloadImageTask(holder.blockImage).execute(setImg[position].smallSizeUrl);
 
+        holder.blockImage.setImageResource( R.drawable.load);
+        final Bitmap bitmap = MainActivity.getBitmapFromMemCache(setImg[position].identifier);
+        if (bitmap != null) {
+            holder.blockImage.setImageBitmap(bitmap);
+        } else {
+            new DownloadImageTask(holder.blockImage, setImg[position].identifier).execute(setImg[position].smallSizeUrl);
+        }
 
     }
     // Return the size of your dataset (invoked by the layout manager)

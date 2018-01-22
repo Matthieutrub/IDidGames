@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -12,6 +13,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.util.LruCache;
 import android.view.Display;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -26,10 +29,12 @@ public class MainActivity extends AppCompatActivity {
     public static Context context;
     public static ImageInstagram[] mDataset=new ImageInstagram[0];
     public static RecyclerView mRecyclerView;
+
     Button buttonSave;
     EditText tvSearch;
     int MY_PERMISSIONS_REQUEST_READ_STORAGE;
     private RecyclerView.LayoutManager mLayoutManager;
+    private static LruCache<String, Bitmap> mMemoryCache;
 
     public static String makeHashTag(String string) {
         string = string.replaceAll("\\s+", "");
@@ -94,6 +99,16 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public static void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    public static Bitmap getBitmapFromMemCache(String key) {
+        return mMemoryCache.get(key);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -113,6 +128,23 @@ public class MainActivity extends AppCompatActivity {
         width = size.x;
         height = size.y;
 
+        // Get max available VM memory, exceeding this amount will throw an
+        // OutOfMemory exception. Stored in kilobytes as LruCache takes an
+        // int in its constructor.
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+        // Use 1/8th of the available memory for this memory cache.
+        final int cacheSize = maxMemory / 2;
+        Log.e("maxMemory ",Integer.toString(maxMemory));
+
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                // The cache size will be measured in kilobytes rather than
+                // number of items.
+                return bitmap.getByteCount() / 1024;
+            }
+        };
 
         mRecyclerView = findViewById(R.id.my_recycler_view);
 

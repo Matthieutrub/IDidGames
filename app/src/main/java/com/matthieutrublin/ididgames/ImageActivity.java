@@ -40,7 +40,7 @@ public class ImageActivity extends AppCompatActivity {
         display.getSize(size);
         int width = size.x;
 
-        new DownloadImageTask(imageView).execute(theOne.url);
+        new DownloadImageTask(imageView,"grand").execute(theOne.url);
 
         id.setText(theOne.identifier);
         owner.setText(theOne.owner);
